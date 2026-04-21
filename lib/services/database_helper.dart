@@ -44,18 +44,30 @@ class DatabaseHelper {
       complexity_score INTEGER NOT NULL
     )
   ''');
+
+    // Time logs
+    await db.execute('''
+    CREATE TABLE time_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      assignment_id INTEGER NOT NULL,
+      hours REAL NOT NULL,
+      log_date TEXT NOT NULL,
+      description TEXT,
+      FOREIGN KEY (assignment_id) REFERENCES assignments (id) ON DELETE CASCADE
+  )
+  ''');
   }
 
   Future<void> seedDatabase() async {
     final db = await instance.database;
 
-    await db.delete('assignments'); // Clear existing data before seeding
-
     // Check if the table is empty before seeding
     List<Map> count = await db.rawQuery(
       'SELECT COUNT(*) as count FROM assignments',
     );
-    if (count.first['count'] == 0) {
+    if ((count.first['count'] as int) != 0) return;
+
+    {
       // list of tasks
       List<Map<String, dynamic>> dataset = [
         // ==========================================
@@ -597,11 +609,12 @@ class DatabaseHelper {
       for (var row in dataset) {
         await db.insert('assignments', row);
       }
+
       print("Dataset successfully seeded!");
     }
   }
 
-  // Function to get all assignments from the database, ordered by year, semester, and due date
+  // 1. Function to get all assignments from the database, ordered by year, semester, and due date
   Future<List<Map<String, dynamic>>> getAllAssignments() async {
     final db = await instance.database;
     // query the database to get all assignments, ordered by year, semester (Winter before Summer), and due date
@@ -610,5 +623,40 @@ class DatabaseHelper {
       orderBy:
           'year ASC, CASE WHEN semester = "Winter" THEN 0 ELSE 1 END, due_date',
     );
+  }
+
+  // 2. Function to add a time log entry for a specific assignment
+  Future<int> addTimeLog(
+    int assignmentId,
+    double hours,
+    String description,
+  ) async {
+    final db = await instance.database;
+    // Insert a new time log entry
+    return await db.insert('time_logs', {
+      'assignment_id': assignmentId,
+      'hours': hours,
+      'log_date': DateTime.now().toIso8601String(),
+      'description': description,
+    });
+  }
+
+  // 3. Function to get the actual hours for a specific assignment
+  Future<double> getActualHours(int assignmentId) async {
+    final db = await instance.database;
+
+    // SQL question, get the sum of hours for specific assignment id
+    final result = await db.rawQuery(
+      'SELECT SUM(hours) as total_hours FROM time_logs WHERE assignment_id = ?',
+      [assignmentId],
+    );
+
+    // Take care of the result
+    if (result.first['total_hours'] != null) {
+      // Sqflite somethimes returns num, I will transfer it to double
+      return (result.first['total_hours'] as num).toDouble();
+    } else {
+      return 0.0;
+    }
   }
 }
