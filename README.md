@@ -1,16 +1,26 @@
-# uniflow
+# UniFlow – Prototype Information System
 
-A new Flutter project.
+## 📌 Project Overview
+This mobile application is a functional prototype developed as part of the digital transformation strategy for **BrightWave Enterprises**. The system is designed to support university students in managing their academic workload, improving operational efficiency, and aiding decision-making regarding assignment priorities.
 
-## Getting Started
+## 🚀 Key Features
+* **Sticky Header Dashboard:** Assignments are organized by Year and Semester using advanced Flutter Slivers for better data visualization.
+* **Persistent Storage:** Uses a local **SQLite** database to manage assignment records.
+* **Detailed Analytics View:** A dedicated screen for each assignment displaying complexity scores, weight percentages, and due dates to support better planning.
+* **Task Management:** Ability to track status (Planned, In Progress, Done) and evaluate progress.
 
-This project is a starting point for a Flutter application.
+## 🛠 Tech Stack
+* **Framework:** Flutter (Dart)
+* **Database:** SQLite (sqflite package)
+* **State Management:** FutureBuilder for asynchronous data handling
 
-A few resources to get you started if this is your first Flutter project:
+## 📊 Data Analysis & Business Value
+The prototype allows for analyzing trends within academic data, such as:
+* **Workload Distribution:** Identifying semesters with the highest concentration of high-complexity tasks.
+* **Strategic Prioritization:** Helping users focus on assignments with higher grade weighting (weight_percent).
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🏁 How to Run
+1. Clone the repository.
+2. Ensure Flutter is installed.
+3. Run `flutter pub get`.
+4. Launch the app using `flutter run`.
