@@ -5,10 +5,10 @@ import 'services/database_helper.dart';
 import 'screens/dashboard_screen.dart';
 
 void main() async {
-  // 1. Nutnost pro asynchronní operace
+  // 1. Initializace Flutteru
   WidgetsFlutterBinding.ensureInitialized();
 
-  // --- TENTO BLOK JE PRO WINDOWS ---
+  // --- WINDOWS ---
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit(); // Inicializuje ovladač
     databaseFactory =
@@ -16,11 +16,12 @@ void main() async {
   }
   // -----------------------------------------
 
-  // 2. Start databáze
-  print("Startuji databázi...");
-  await DatabaseHelper.instance.seedDatabase();
-
+  // 2. Spusteni aplikace
   runApp(const MyApp());
+
+  // 3. Start databáze
+  print("Seeding database...");
+  DatabaseHelper.instance.seedDatabase();
 }
 
 class MyApp extends StatelessWidget {
@@ -32,8 +33,8 @@ class MyApp extends StatelessWidget {
       title: 'UniFlow',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-        ), // colorsscheme from seed is a way to generate a color scheme based on a single seed color. It creates a harmonious palette of colors that can be used throughout the app, ensuring a consistent and visually appealing design.
+          seedColor: const Color.fromRGBO(153, 192, 35, 1),
+        ),
         useMaterial3: true,
       ),
       home: const DashboardScreen(),

@@ -2,10 +2,29 @@ import 'package:flutter/material.dart';
 import '../services/database_helper.dart';
 import 'assignment_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-  // Function to get color based on status
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  // Proměnná slouží k vynucení reloadu FutureBuilderu
+  late Future<List<Map<String, dynamic>>> _assignmentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    setState(() {
+      _assignmentsFuture = DatabaseHelper.instance.getAllAssignments();
+    });
+  }
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Done':
@@ -19,7 +38,6 @@ class DashboardScreen extends StatelessWidget {
     }
   }
 
-  // Function to build a card for each task
   Widget _buildCard(BuildContext context, Map<String, dynamic> task) {
     return InkWell(
       onTap: () {
@@ -28,7 +46,10 @@ class DashboardScreen extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => AssignmentDetailScreen(task: task),
           ),
-        );
+        ).then((_) {
+          // Když se vrátím z detailu, Dashboard se znovu načte
+          _loadData();
+        });
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
@@ -37,7 +58,23 @@ class DashboardScreen extends StatelessWidget {
             task['title'],
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          subtitle: Text('Module: ${task['module_name']}'),
+          // Přidání Actual vs Estimated hodin přímo do podnadpisu
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Module: ${task['module_name']}'),
+              const SizedBox(height: 4),
+              Text(
+                'Progress: ${task['actual_hours']}h / ${task['estimated_hours']}h',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: (task['actual_hours'] > task['estimated_hours'])
+                      ? Colors.red
+                      : Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
           trailing: Text(
             task['status'],
             style: TextStyle(
@@ -56,42 +93,39 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('UniFlow Dashboard'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData, // Manuální refresh tlačítko
+          ),
+          const SizedBox(width: 40),
+        ],
       ),
-
-      // Use FutureBuilder to fetch and display tasks
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: DatabaseHelper.instance.getAllAssignments(),
+        future: _assignmentsFuture, // Používám proměnnou z initState
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            ); // Show loading indicator while fetching data
+            return const Center(child: CircularProgressIndicator());
           }
-          // if is data is empty, show a message
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No assignments found.'));
           }
 
           final tasks = snapshot.data!;
           Map<String, List<Map<String, dynamic>>> grouped = {};
-          // Group tasks by year and semester
           for (var t in tasks) {
             String key = "Year ${t['year']} - ${t['semester']}";
             grouped.putIfAbsent(key, () => []).add(t);
           }
 
-          // Build a CustomScrollView with SliverPersistentHeader for each group
           return CustomScrollView(
             slivers: grouped.keys.map((headerTitle) {
-              // For each group, create a SliverMainAxisGroup that contains a pinned header and a list of cards
               return SliverMainAxisGroup(
                 slivers: [
-                  // pinned header that shows the group title (year and semester)
                   SliverPersistentHeader(
-                    pinned: true, // TADY JE TO KOUZLO - díky tomu to "lepí"
+                    pinned: true,
                     delegate: _HeaderDelegate(title: headerTitle),
                   ),
-                  // list of cards for each task in the group
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, i) =>

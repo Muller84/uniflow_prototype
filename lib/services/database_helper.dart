@@ -61,11 +61,19 @@ class DatabaseHelper {
   Future<void> seedDatabase() async {
     final db = await instance.database;
 
-    // Check if the table is empty before seeding
-    List<Map> count = await db.rawQuery(
+    // 1. Kontrola, jestli je tabulka prázdná
+    var countResult = await db.rawQuery(
       'SELECT COUNT(*) as count FROM assignments',
     );
-    if ((count.first['count'] as int) != 0) return;
+    int count = Sqflite.firstIntValue(countResult) ?? 0;
+
+    if (count > 0) {
+      print("Data už v databázi jsou, seeding přeskakuji.");
+      return; // Konec pokud už data existují
+    }
+
+    print("Provádím seeding dat...");
+    final batch = db.batch();
 
     {
       // list of tasks
@@ -607,8 +615,9 @@ class DatabaseHelper {
         },
       ];
       for (var row in dataset) {
-        await db.insert('assignments', row);
+        batch.insert('assignments', row);
       }
+      await batch.commit(noResult: true);
 
       print("Dataset successfully seeded!");
     }
@@ -617,12 +626,17 @@ class DatabaseHelper {
   // 1. Function to get all assignments from the database, ordered by year, semester, and due date
   Future<List<Map<String, dynamic>>> getAllAssignments() async {
     final db = await instance.database;
+
     // query the database to get all assignments, ordered by year, semester (Winter before Summer), and due date
-    return await db.query(
-      'assignments',
-      orderBy:
-          'year ASC, CASE WHEN semester = "Winter" THEN 0 ELSE 1 END, due_date',
-    );
+    return await db.rawQuery('''
+    SELECT 
+      a.*, 
+      COALESCE(SUM(t.hours), 0) as actual_hours
+    FROM assignments a
+    LEFT JOIN time_logs t ON a.id = t.assignment_id
+    GROUP BY a.id
+    ORDER BY a.year ASC, CASE WHEN a.semester = 'Winter' THEN 0 ELSE 1 END, a.due_date
+  ''');
   }
 
   // 2. Function to add a time log entry for a specific assignment
