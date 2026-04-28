@@ -39,6 +39,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildCard(BuildContext context, Map<String, dynamic> task) {
+    // Logic for formative vs summative tasks
+    bool isFormative = task['type'] == 'Feedback';
+
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -53,11 +56,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+        elevation: 2, // Shadow for better visual separation
         child: ListTile(
-          title: Text(
-            task['title'],
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          leading: CircleAvatar(
+            backgroundColor: isFormative
+                ? Colors.blue.withValues(alpha: 0.1)
+                : Colors.orange.withValues(alpha: 0.1),
+            child: Icon(
+              isFormative ? Icons.lightbulb_outline : Icons.assignment,
+              // Icon color based on task type
+              color: isFormative ? Colors.blue : Colors.orange,
+            ),
           ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  task['title'],
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isFormative ? Colors.blue[50] : Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isFormative
+                        ? Colors.blue[200]!
+                        : Colors.orange[200]!,
+                  ),
+                ),
+                child: Text(
+                  isFormative ? 'FORMATIVE' : 'SUMMATIVE',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isFormative ? Colors.blue[700] : Colors.orange[800],
+                  ),
+                ),
+              ),
+            ],
+          ), // Favicon pro typ úkolu
           // Přidání Actual vs Estimated hodin přímo do podnadpisu
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,12 +105,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text('Module: ${task['module_name']}'),
               const SizedBox(height: 4),
               Text(
-                'Progress: ${task['actual_hours']}h / ${task['estimated_hours']}h',
+                'Logged: ${task['actual_hours']}h / Est: ${task['estimated_hours']}h',
                 style: TextStyle(
                   fontSize: 12,
                   color: (task['actual_hours'] > task['estimated_hours'])
-                      ? Colors.red
-                      : Colors.grey[700],
+                      ? Colors
+                            .red // Overtime warning
+                      : Colors.grey[700], // Standard color for hours
                 ),
               ),
             ],
