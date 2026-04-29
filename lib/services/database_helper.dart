@@ -806,4 +806,15 @@ class DatabaseHelper {
       return 0.0;
     }
   }
+
+  // 4. Function to update the status of an assignment
+  Future<int> updateAssignmentStatus(int id, String newStatus) async {
+    final db = await instance.database;
+    return await db.update(
+      'assignments', // Správný název tvé tabulky
+      {'status': newStatus},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }

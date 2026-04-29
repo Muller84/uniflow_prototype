@@ -13,9 +13,14 @@ class AssignmentDetailScreen extends StatefulWidget {
 class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   double _currentActualHours = 0.0; // Freshly added number
 
+  late String
+  _currentStatus; // Variable to hold the current status of the assignment
+
   @override
   void initState() {
     super.initState(); // call the parent class's initState method
+    _currentStatus = widget
+        .task['status']; // Initialize the current status from the task data
     _refreshHours(); // call the method which will read the data
   }
 
@@ -25,6 +30,19 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
     );
     setState(() {
       _currentActualHours = total; // Update the state with the new total hours
+    });
+  }
+
+  // Samostatná metoda v rámci State třídy
+  void _updateStatus(String newStatus) async {
+    await DatabaseHelper.instance.updateAssignmentStatus(
+      widget.task['id'] as int,
+      newStatus,
+    );
+
+    // Aktualizace lokálního stavu, aby se změna projevila hned na této obrazovce
+    setState(() {
+      _currentStatus = newStatus;
     });
   }
 
@@ -104,11 +122,36 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                       widget.task['due_date'],
                       Icons.calendar_today,
                     ),
+                    _buildInfoRow(
+                      'Credits',
+                      '${widget.task['credits'] ?? 'N/A'}',
+                      Icons.grade,
+                    ),
                     // Display the type of the assignment with an appropriate icon
                     _buildInfoRow(
                       'Status',
-                      widget.task['status'],
+                      _currentStatus,
                       Icons.info_outline,
+                      trailing: DropdownButton<String>(
+                        underline: Container(), // Schováme linku pod dropdownem
+                        icon: const Icon(
+                          Icons.edit,
+                          size: 16,
+                        ), // Ikona tužky pro editaci
+                        items: ['Planned', 'In Progress', 'Done'].map((
+                          String value,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            _updateStatus(newValue);
+                          }
+                        },
+                      ),
                     ),
                     // Display weight percentage of the assignment
                     const Divider(),
@@ -163,29 +206,39 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   }
 
   // Helper method to build a row of information with an icon, label, and value
-  Widget _buildInfoRow(String label, String value, IconData icon) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    IconData icon, {
+    Widget? trailing,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
           Icon(icon, color: Colors.blueGrey),
           const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+          // Expanded zajistí, že Column vezme všechno místo a trailing bude vpravo
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
-              ),
-            ],
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
+          // Pokud trailing pošleme (např. u statusu), tak ho zobrazíme
+          if (trailing != null) trailing,
         ],
       ),
     );
