@@ -92,31 +92,42 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
+                    // Display the module name of the assignment with an appropriate icon
                     _buildInfoRow(
                       'Module',
                       widget.task['module_name'],
                       Icons.book,
-                    ), // Get the module name from the task data
+                    ),
+                    // Display the type of the assignment with an appropriate icon
                     _buildInfoRow(
                       'Due Date',
                       widget.task['due_date'],
                       Icons.calendar_today,
                     ),
+                    // Display the type of the assignment with an appropriate icon
                     _buildInfoRow(
                       'Status',
                       widget.task['status'],
                       Icons.info_outline,
                     ),
+                    // Display weight percentage of the assignment
                     const Divider(),
                     _buildInfoRow(
                       'Weight',
                       '${widget.task['weight_percent']}%',
                       Icons.percent,
                     ),
+                    // Display complexity score
                     _buildInfoRow(
                       'Complexity',
                       '${widget.task['complexity_score']}/5',
                       Icons.psychology,
+                    ),
+                    // Display credits if available, otherwise show 'N/A'
+                    _buildInfoRow(
+                      'Credits',
+                      '${widget.task['credits'] ?? 'N/A'}',
+                      Icons.grade,
                     ),
                   ],
                 ),
