@@ -9,51 +9,55 @@ ThemeData buildTheme() {
     // Globální font
     textTheme: GoogleFonts.outfitTextTheme(),
 
-    // Colors
-    primaryColor: togglPink,
-    scaffoldBackgroundColor: Colors.white,
+    // Background
+    scaffoldBackgroundColor: uniBackground,
+
+    // Primární barva aplikace
+    primaryColor: uniPrimary,
 
     // AppBar styl
     appBarTheme: AppBarTheme(
-      backgroundColor: togglDark,
+      backgroundColor: uniPrimary,
       elevation: 0,
       iconTheme: const IconThemeData(color: Colors.white),
       titleTextStyle: GoogleFonts.outfit(
-        color: togglPink,
+        color: uniAccentBlue,
         fontWeight: FontWeight.bold,
         fontSize: 20,
       ),
     ),
 
-    // Button styl
+    // Tlačítka
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: togglPink,
+        backgroundColor: uniAccentBlue,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       ),
     ),
+
+    // TextField styl
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: togglLightPurple.withValues(alpha: 0.5),
+      fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: togglPink, width: 1.5),
+        borderSide: BorderSide(color: uniAccentBlue, width: 1.5),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(
-          color: togglPink.withValues(alpha: 0.6),
+          color: uniAccentBlue.withValues(alpha: 0.5),
           width: 1.5,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: togglPink, width: 2),
+        borderSide: BorderSide(color: uniAccentBlue, width: 2),
       ),
-      labelStyle: TextStyle(color: togglDark, fontWeight: FontWeight.w500),
+      labelStyle: TextStyle(color: uniPrimary, fontWeight: FontWeight.w500),
     ),
   );
 }

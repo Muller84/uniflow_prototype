@@ -849,4 +849,73 @@ class DatabaseHelper {
     }
     return null;
   }
+
+  // 7. Function to get the count of formative and summative done tasks in the last 90 days, grouped by month
+  Future<Map<int, Map<String, int>>> getFormativeSummativeLast90Days() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT 
+      CAST(strftime('%m', due_date) AS INTEGER) AS month,
+      SUM(CASE WHEN status = 'Done' AND type = 'Feedback' THEN 1 ELSE 0 END) AS formative_done,
+      SUM(CASE WHEN status = 'Done' AND type != 'Feedback' THEN 1 ELSE 0 END) AS summative_done
+    FROM assignments
+    WHERE date(due_date) >= date('now', '-90 days')
+    GROUP BY month
+  ''');
+
+    final now = DateTime.now();
+    final m1 = now.month;
+    final m2 = (now.month - 1) == 0 ? 12 : now.month - 1;
+    final m3 = (now.month - 2) <= 0 ? 12 + (now.month - 2) : now.month - 2;
+
+    // Default values for all 3 months
+    Map<int, Map<String, int>> data = {
+      m3: {"formative": 0, "summative": 0},
+      m2: {"formative": 0, "summative": 0},
+      m1: {"formative": 0, "summative": 0},
+    };
+
+    for (var row in result) {
+      int month = row['month'] as int;
+      if (data.containsKey(month)) {
+        data[month]!["formative"] = row['formative_done'] as int;
+        data[month]!["summative"] = row['summative_done'] as int;
+      }
+    }
+
+    return data;
+  }
+
+  // 8. Function to get the last 3 summative tasks (type != 'Feedback'), ordered by due date descending
+  Future<List<Map<String, dynamic>>> getLastThreeSummative() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT title, estimated_hours, actual_hours, due_date
+    FROM assignments
+    WHERE type != 'Feedback'
+    ORDER BY date(due_date) DESC
+    LIMIT 3
+  ''');
+
+    return result;
+  }
+
+  // 9. Function to get the next 3 upcoming deadlines (status != 'Done'), ordered by due date ascending, where due date is within the next 14 days
+  Future<List<Map<String, dynamic>>> getUpcomingDeadlines() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT *
+    FROM assignments
+    WHERE status != 'Done'
+    AND date(due_date) >= date('now')
+    AND date(due_date) <= date('now', '+14 days')
+    ORDER BY date(due_date) ASC
+    LIMIT 3
+  ''');
+
+    return result;
+  }
 }

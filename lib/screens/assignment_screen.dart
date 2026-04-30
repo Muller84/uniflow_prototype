@@ -114,12 +114,12 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: togglDark,
+        backgroundColor: uniPrimary,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.task['title'],
           style: GoogleFonts.outfit(
-            color: togglPink,
+            color: uniAccentBlue,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -150,16 +150,16 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                       Icons.info_outline,
                       trailing: DropdownButton<String>(
                         underline: Container(),
-                        dropdownColor: togglLightPurple,
-                        iconEnabledColor: togglPink,
+                        dropdownColor: uniBackground,
+                        iconEnabledColor: uniAccentBlue,
                         style: TextStyle(
-                          color: togglDark,
+                          color: uniPrimary,
                           fontWeight: FontWeight.w500,
                         ),
                         icon: const Icon(
                           Icons.edit_note,
                           size: 20,
-                          color: togglPink,
+                          color: uniAccentBlue,
                         ),
                         items: ['Planned', 'In Progress', 'Done'].map((
                           String value,
@@ -208,7 +208,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                           tooltip: 'Delete Last Entry',
                           icon: const Icon(
                             Icons.delete_sweep,
-                            color: togglPink,
+                            color: uniAccentBlue,
                             size: 25,
                           ),
                           onPressed: () async {
@@ -242,7 +242,11 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showLogTimeDialog(context),
-        label: const Text('Log Time + Note'),
+        backgroundColor: uniAccentBlue, // color for the button
+        label: const Text(
+          'Log Time + Note',
+          style: TextStyle(color: Colors.white), // text color for the label
+        ),
         icon: const Icon(Icons.more_time),
       ),
     );
@@ -260,8 +264,8 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: togglPink.withValues(alpha: 0.1),
-            child: Icon(icon, size: 16, color: togglPink),
+            backgroundColor: uniAccentBlue.withValues(alpha: 0.1),
+            child: Icon(icon, size: 16, color: uniAccentBlue),
           ),
           const SizedBox(width: 15),
           Expanded(
