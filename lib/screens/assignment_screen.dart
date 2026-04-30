@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:uniflow/theme/colors.dart';
 import '../services/database_helper.dart';
 
 class AssignmentDetailScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class AssignmentDetailScreen extends StatefulWidget {
 
 class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   double _currentActualHours = 0.0;
+  String? _lastNote; // Last note
   late String _currentStatus;
 
   @override
@@ -26,8 +28,13 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
     final total = await DatabaseHelper.instance.getActualHours(
       widget.task['id'] as int,
     );
+    // Fetch the last note for this task
+    final lastNote = await DatabaseHelper.instance.getLastNote(
+      widget.task['id'] as int,
+    );
     setState(() {
       _currentActualHours = total;
+      _lastNote = lastNote;
     });
   }
 
@@ -81,12 +88,17 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                 hoursController.text,
               );
               if (enteredHours != null && enteredHours > 0) {
-                // VOLÁNÍ DATABÁZE - ujisti se, že addTimeLog přijímá tyto 3 argumenty
+                // call database helper to add log
                 await DatabaseHelper.instance.addTimeLog(
                   widget.task['id'],
                   enteredHours,
                   noteController.text.isEmpty ? 'No note' : noteController.text,
                 );
+                setState(() {
+                  _lastNote = noteController.text.isEmpty
+                      ? 'No note'
+                      : noteController.text; // Save last note to state
+                });
                 if (context.mounted) Navigator.pop(context);
                 await _refreshHours();
               }
@@ -101,7 +113,17 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.task['title'])),
+      appBar: AppBar(
+        backgroundColor: togglDark,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          widget.task['title'],
+          style: GoogleFonts.outfit(
+            color: togglPink,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -128,7 +150,17 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                       Icons.info_outline,
                       trailing: DropdownButton<String>(
                         underline: Container(),
-                        icon: const Icon(Icons.edit, size: 16),
+                        dropdownColor: togglLightPurple,
+                        iconEnabledColor: togglPink,
+                        style: TextStyle(
+                          color: togglDark,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        icon: const Icon(
+                          Icons.edit_note,
+                          size: 20,
+                          color: togglPink,
+                        ),
                         items: ['Planned', 'In Progress', 'Done'].map((
                           String value,
                         ) {
@@ -158,30 +190,49 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Column(
                   children: [
-                    _buildColumnInfo(
-                      'Estimated',
-                      '${widget.task['estimated_hours']}h',
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildColumnInfo(
+                          'Estimated',
+                          '${widget.task['estimated_hours']}h',
+                        ),
+                        _buildColumnInfo('Actual', '${_currentActualHours}h'),
+                        IconButton(
+                          tooltip: 'Delete Last Entry',
+                          icon: const Icon(
+                            Icons.delete_sweep,
+                            color: togglPink,
+                            size: 25,
+                          ),
+                          onPressed: () async {
+                            await DatabaseHelper.instance.deleteLastLog(
+                              widget.task['id'],
+                            );
+                            await _refreshHours();
+                          },
+                        ),
+                      ],
                     ),
-                    _buildColumnInfo('Actual', '${_currentActualHours}h'),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete_sweep,
-                        color: Colors.redAccent,
-                        size: 20,
+                    if (_lastNote != null && _lastNote!.isNotEmpty) ...[
+                      const Divider(),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          ' Last note: $_lastNote',
+                          style: const TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ),
-                      onPressed: () async {
-                        await DatabaseHelper.instance.deleteLastLog(
-                          widget.task['id'],
-                        );
-                        await _refreshHours();
-                      },
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -191,7 +242,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showLogTimeDialog(context),
-        label: const Text('Log Time'),
+        label: const Text('Log Time + Note'),
         icon: const Icon(Icons.more_time),
       ),
     );
@@ -207,7 +258,11 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: Colors.blueGrey),
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: togglPink.withValues(alpha: 0.1),
+            child: Icon(icon, size: 16, color: togglPink),
+          ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(

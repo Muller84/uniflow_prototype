@@ -3,11 +3,7 @@ import '../services/database_helper.dart';
 import 'assignment_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
-
-// Constant color
-const Color togglDark = Color(0xFF2C1338);
-const Color togglPink = Color(0xFFE57CD8);
-const Color togglLightPurple = Color(0xFFFCEBFA);
+import 'package:uniflow/theme/colors.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -35,11 +31,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Done':
-        return const Color.fromRGBO(71, 15, 69, 1);
+        return Color(0xFF8A2E74); // Dark purple for completed tasks
       case 'In Progress':
-        return Colors.orange;
+        return Color(0xFFE57CD8); // Bright pink for tasks in progress
       case 'Planned':
-        return Colors.blue;
+        return Color(0xFFBFA6D9); // Light pink for planned tasks
       default:
         return Colors.grey;
     }
@@ -68,12 +64,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: isFormative
-                ? Colors.blue.withValues(alpha: 0.1)
-                : Colors.orange.withValues(alpha: 0.1),
+                ? togglPink.withValues(alpha: 0.15)
+                : togglDark.withValues(alpha: 0.15),
             child: Icon(
               isFormative ? Icons.lightbulb_outline : Icons.assignment,
               // Icon color based on task type
-              color: isFormative ? Colors.blue : Colors.orange,
+              color: isFormative ? togglPink : togglDark,
             ),
           ), // Favicon pro typ úkolu
           // Přidání Actual vs Estimated hodin přímo do podnadpisu
@@ -333,8 +329,8 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     return Container(
-      // Pozadí necháme světlé, aby to ladilo k tělu aplikace
-      color: const Color.fromRGBO(243, 236, 239, 1),
+      // background for header
+      color: Color(0xFFF3E8FF), // Light pink background for the header
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Text(

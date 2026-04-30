@@ -780,7 +780,7 @@ class DatabaseHelper {
       'assignment_id': assignmentId,
       'hours': hours,
       'log_date': DateTime.now().toIso8601String(),
-      'note': note,
+      'description': note,
     });
   }
 
@@ -816,14 +816,13 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
-}
 
-// 5. Function to delete the time log entry for a specific assignment
-Future<void> deleteLastLog(int assignmentId) async {
-  final db = await instance.database;
-  // Smaže nejnovější záznam v čase pro daný úkol
-  await db.rawDelete(
-    '''
+  // 5. Function to delete the time log entry for a specific assignment
+  Future<void> deleteLastLog(int assignmentId) async {
+    final db = await instance.database;
+    // Smaže nejnovější záznam v čase pro daný úkol
+    await db.rawDelete(
+      '''
     DELETE FROM time_logs 
     WHERE id = (
       SELECT id FROM time_logs 
@@ -831,6 +830,23 @@ Future<void> deleteLastLog(int assignmentId) async {
       ORDER BY id DESC LIMIT 1
     )
   ''',
-    [assignmentId],
-  );
+      [assignmentId],
+    );
+  }
+
+  // 6. Function to get the last note for a specific assignment
+  Future<String?> getLastNote(int assignmentId) async {
+    final db = await instance.database;
+    final result = await db.query(
+      'time_logs',
+      where: 'assignment_id = ?',
+      whereArgs: [assignmentId],
+      orderBy: 'id DESC',
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      return result.first['description'] as String?;
+    }
+    return null;
+  }
 }

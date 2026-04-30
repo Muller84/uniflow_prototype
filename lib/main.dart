@@ -3,6 +3,7 @@ import 'dart:io'; // Pro kontrolu, jestli jsem na Windows
 import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Pro Windows databázi
 import 'services/database_helper.dart';
 import 'screens/dashboard_screen.dart';
+import 'package:uniflow/theme/theme.dart';
 
 void main() async {
   // 1. Initializace Flutteru
@@ -31,12 +32,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'UniFlow',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromRGBO(153, 192, 35, 1),
-        ),
-        useMaterial3: true,
-      ),
+      theme: buildTheme(),
       home: const DashboardScreen(),
     );
   }
