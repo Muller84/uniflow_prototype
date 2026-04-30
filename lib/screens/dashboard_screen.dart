@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/database_helper.dart';
 import 'assignment_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'login_screen.dart';
 
 // Constant color
 const Color togglDark = Color(0xFF2C1338);
@@ -197,29 +198,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             color: togglPink,
-            iconSize: 28,
+            iconSize: 25,
             onPressed: () {
               _loadData(); // Reload data when refresh button is pressed
             },
           ),
 
-          const SizedBox(width: 15),
+          const SizedBox(width: 30),
 
-          const Icon(
-            Icons.account_circle_outlined,
-            color: Colors.white,
-            size: 28,
-          ),
-          const SizedBox(width: 8),
-          const Center(
-            child: Text(
-              'Alex',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            splashColor: Colors.white24,
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 4.0,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.account_circle_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Alex',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+
           const SizedBox(width: 30),
         ],
       ), // AppBar

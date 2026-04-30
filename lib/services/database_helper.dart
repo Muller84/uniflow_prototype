@@ -773,18 +773,14 @@ class DatabaseHelper {
   }
 
   // 2. Function to add a time log entry for a specific assignment
-  Future<int> addTimeLog(
-    int assignmentId,
-    double hours,
-    String description,
-  ) async {
+  Future<int> addTimeLog(int assignmentId, double hours, String note) async {
     final db = await instance.database;
     // Insert a new time log entry
     return await db.insert('time_logs', {
       'assignment_id': assignmentId,
       'hours': hours,
       'log_date': DateTime.now().toIso8601String(),
-      'description': description,
+      'note': note,
     });
   }
 
@@ -792,19 +788,22 @@ class DatabaseHelper {
   Future<double> getActualHours(int assignmentId) async {
     final db = await instance.database;
 
-    // SQL question, get the sum of hours for specific assignment id
     final result = await db.rawQuery(
-      'SELECT SUM(hours) as total_hours FROM time_logs WHERE assignment_id = ?',
+      '''
+    SELECT 
+      (a.actual_hours + COALESCE(SUM(t.hours), 0)) as total 
+    FROM assignments a
+    LEFT JOIN time_logs t ON a.id = t.assignment_id
+    WHERE a.id = ?
+    GROUP BY a.id
+  ''',
       [assignmentId],
     );
 
-    // Take care of the result
-    if (result.first['total_hours'] != null) {
-      // Sqflite somethimes returns num, I will transfer it to double
-      return (result.first['total_hours'] as num).toDouble();
-    } else {
-      return 0.0;
+    if (result.isNotEmpty && result.first['total'] != null) {
+      return (result.first['total'] as num).toDouble();
     }
+    return 0.0;
   }
 
   // 4. Function to update the status of an assignment
@@ -817,4 +816,21 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+}
+
+// 5. Function to delete the time log entry for a specific assignment
+Future<void> deleteLastLog(int assignmentId) async {
+  final db = await instance.database;
+  // Smaže nejnovější záznam v čase pro daný úkol
+  await db.rawDelete(
+    '''
+    DELETE FROM time_logs 
+    WHERE id = (
+      SELECT id FROM time_logs 
+      WHERE assignment_id = ? 
+      ORDER BY id DESC LIMIT 1
+    )
+  ''',
+    [assignmentId],
+  );
 }
