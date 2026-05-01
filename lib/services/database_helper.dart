@@ -887,22 +887,7 @@ class DatabaseHelper {
     return data;
   }
 
-  // 8. Function to get the last 3 summative tasks (type != 'Feedback'), ordered by due date descending
-  Future<List<Map<String, dynamic>>> getLastThreeSummative() async {
-    final db = await database;
-
-    final result = await db.rawQuery('''
-    SELECT title, estimated_hours, actual_hours, due_date
-    FROM assignments
-    WHERE type != 'Feedback'
-    ORDER BY date(due_date) DESC
-    LIMIT 3
-  ''');
-
-    return result;
-  }
-
-  // 9. Function to get the next 3 upcoming deadlines (status != 'Done'), ordered by due date ascending, where due date is within the next 14 days
+  // 8. Function to get the next 3 upcoming deadlines (status != 'Done'), ordered by due date ascending, where due date is within the next 14 days
   Future<List<Map<String, dynamic>>> getUpcomingDeadlines() async {
     final db = await database;
 
@@ -913,6 +898,22 @@ class DatabaseHelper {
     AND date(due_date) >= date('now')
     AND date(due_date) <= date('now', '+14 days')
     ORDER BY date(due_date) ASC
+    LIMIT 3
+  ''');
+
+    return result;
+  }
+
+  // 9. Function to get the last 3 tasks (formative + summative),
+  // ordered by due date descending
+  Future<List<Map<String, dynamic>>> getLastThreeTasks() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+    SELECT title, estimated_hours, actual_hours, due_date, type
+    FROM assignments
+    WHERE status IN ('Planned', 'In Progress', 'Done')
+    ORDER BY date(due_date) DESC
     LIMIT 3
   ''');
 

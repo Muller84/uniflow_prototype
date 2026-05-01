@@ -4,6 +4,7 @@ import 'assignment_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import 'package:uniflow/theme/colors.dart';
+import 'package:url_launcher/url_launcher.dart'; // for opening the college website
 import 'package:fl_chart/fl_chart.dart'; // for the graph
 
 class DashboardScreen extends StatefulWidget {
@@ -21,11 +22,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<int, Map<String, int>> _doneTypes = {};
   List<int> _months = [];
 
-  // Promenna pro ulozeni dat pro worload
-  List<Map<String, dynamic>> _lastSummative = [];
-
   // Proměnná pro zobrazení počtu úkolů s blížícím se deadline v top kartě
   List<Map<String, dynamic>> _deadlineTasks = [];
+
+  // Proměnná pro zobrazení posledních 3 úkolů v top kartě Workload
+  List<Map<String, dynamic>> _lastTasks = [];
 
   @override
   void initState() {
@@ -45,16 +46,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _months = data.keys.toList(); // např. [2,3,4]
       });
     });
-    // Načteme data pro zobrazení workloadu v top kartě
-    DatabaseHelper.instance.getLastThreeSummative().then((data) {
-      setState(() {
-        _lastSummative = data;
-      });
-    });
     // Načteme data pro zobrazení počtu úkolů s blížícím se deadline v top kartě
     DatabaseHelper.instance.getUpcomingDeadlines().then((data) {
       setState(() {
         _deadlineTasks = data;
+      });
+    });
+    // Načteme data pro zobrazení posledních 3 úkolů v top kartě Workload
+    DatabaseHelper.instance.getLastThreeTasks().then((data) {
+      setState(() {
+        _lastTasks = data;
       });
     });
 
@@ -252,47 +253,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         // Refresh button in the app bar
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            color: uniAccentBlue,
-            iconSize: 25,
-            onPressed: () {
-              _loadData(); // Reload data when refresh button is pressed
-            },
+          // REFRESH + TOOLTIP
+          Tooltip(
+            message: "Reload data",
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              color: uniAccentBlue,
+              iconSize: 25,
+              onPressed: () {
+                _loadData();
+              },
+            ),
           ),
 
           const SizedBox(width: 30),
 
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            splashColor: Colors.white24,
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 4.0,
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.account_circle_outlined,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Alex',
-                    style: const TextStyle(
+          // B&FC LINK + TOOLTIP
+          Tooltip(
+            message: "Visit B&FC website",
+            child: IconButton(
+              icon: const Icon(Icons.public),
+              color: Colors.white,
+              onPressed: () async {
+                final url = Uri.parse("https://www.blackpool.ac.uk");
+                if (!await launchUrl(
+                  url,
+                  mode: LaunchMode.externalApplication,
+                )) {
+                  throw Exception("Could not launch $url");
+                }
+              },
+            ),
+          ),
+
+          const SizedBox(width: 30),
+
+          // ACCOUNT + TOOLTIP
+          Tooltip(
+            message: "Account / Logout",
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              splashColor: Colors.white24,
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 4.0,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.account_circle_outlined,
                       color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                      size: 28,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      'Alex',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -387,6 +416,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fontWeight: FontWeight.bold,
                           color: togglDark,
                         ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Your DONE tasks from the past 3 months — nice work so far!',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                       ),
                       const SizedBox(height: 10),
                       Container(
@@ -514,20 +548,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-
-                      // Legenda pro graf
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          _buildLegendDot(uniAccentGreen, 'Done'),
-                          SizedBox(width: 12),
-                          _buildLegendDot(uniAccentYellow, 'In Progress'),
-                          SizedBox(width: 12),
-                          _buildLegendDot(uniAccentCoral, 'Planned'),
-                        ],
-                      ),
-
                       const SizedBox(height: 30),
                     ],
                   ),
@@ -541,6 +561,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       pinned: true,
                       delegate: _HeaderDelegate(title: headerTitle),
                     ),
+                    // Legenda pro barvy statusů úkolů
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _buildLegendDot(uniAccentGreen, 'Done'),
+                            SizedBox(width: 12),
+                            _buildLegendDot(uniAccentYellow, 'In Progress'),
+                            SizedBox(width: 12),
+                            _buildLegendDot(uniAccentCoral, 'Planned'),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Seznam úkolů pro danou skupinu
                     SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, i) =>
@@ -571,7 +608,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(icon, color: uniAccentBlue, size: 28),
             const SizedBox(height: 10),
-            if (title != "Workload")
+            if (title !=
+                "Workload") // Pro karty Risk a Deadlines zobrazím jen název a počet úkolů
               Text(
                 title,
                 style: GoogleFonts.outfit(
@@ -582,9 +620,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // ⭐ Pokud je to Workload → zobrazím poslední 3 summative
             if (title == "Workload") ...[
+              Text(
+                'Upcoming Workload Snapshot',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: uniPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Estimated vs Actual hours for your recent formative & summative tasks',
+                style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+              ),
               const SizedBox(height: 12),
 
-              ..._lastSummative.map((task) {
+              ..._lastTasks.map((task) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
@@ -622,6 +673,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               }),
             ],
+            // Pokud je to Risk
+            if (title == "Risk") ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: uniAccentGreen.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle, color: uniAccentGreen, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      "No current risks",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: uniAccentGreen,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // ⭐ Pokud je to Deadlines → zobrazím počet úkolů, které jsou deadline
             if (title == "Deadlines") ...[
               const SizedBox(height: 12),
